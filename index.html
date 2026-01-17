@@ -1,109 +1,51 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Telegram MiniApp: Облако</title>
-  <script>
-    // Подключаем Telegram WebApp с уникальным параметром, чтобы не кэшировался
-    const tgScript = document.createElement('script');
-    tgScript.src = "https://telegram.org/js/telegram-web-app.js?ver=" + Date.now();
-    document.head.appendChild(tgScript);
-  </script>
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui;
-      background: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    h1 {
-      color: #333;
-    }
-    #file-list {
-      width: 100%;
-      max-width: 500px;
-      margin-top: 20px;
-      list-style: none;
-      padding: 0;
-    }
-    #file-list li {
-      background: white;
-      margin-bottom: 10px;
-      padding: 10px 15px;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    button {
-      background: #0088cc;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #006699;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Telegram Cloud</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body { margin:0; font-family: system-ui; background:#f4f4f4; display:flex; flex-direction:column; align-items:center; padding:20px;}
+button, input { margin:5px; padding:10px; font-size:16px;}
+#fileList { margin-top:20px; width:100%; max-width:600px;}
+</style>
 </head>
 <body>
-  <h1>Моё облако Telegram</h1>
 
-  <button id="upload-btn">Загрузить файл</button>
+<h1>Telegram Cloud Storage</h1>
+<input type="file" id="fileInput"/>
+<button id="uploadBtn">Загрузить файл</button>
 
-  <ul id="file-list">
-    <!-- Файлы будут подгружаться сюда -->
-  </ul>
+<h2>Список файлов</h2>
+<div id="fileList">Загрузка...</div>
 
-  <script>
-    // Ждём, пока Telegram WebApp полностью загрузится
-    function onTelegramReady() {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
+<script>
+const tg = window.Telegram.WebApp;
 
-      // Пример: тестовые файлы
-      let files = [
-        {name: "Документ_1.pdf", size: "2MB"},
-        {name: "Фото_лето.jpg", size: "3.5MB"},
-        {name: "Презентация.pptx", size: "5MB"}
-      ];
+// Загружаем список файлов
+async function loadFiles() {
+    const resp = await fetch(`https://api.telegram.org/botВАШ_ТОКЕН_БОТА/getUpdates`);
+    // Для простоты примера мы используем команду /files через бота
+    fetch(`https://api.telegram.org/botВАШ_ТОКЕН_БОТА/sendMessage?chat_id=${tg.initDataUnsafe.user.id}&text=/files`)
+    .then(r => console.log("Запрошен список файлов"));
+}
+loadFiles();
 
-      const list = document.getElementById("file-list");
-      list.innerHTML = "";
+// Загрузка файла
+document.getElementById('uploadBtn').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('fileInput');
+    if(!fileInput.files.length) return alert("Выберите файл!");
 
-      files.forEach(file => {
-        const li = document.createElement("li");
-        li.innerHTML = `<span>${file.name} (${file.size})</span>`;
-        const btn = document.createElement("button");
-        btn.textContent = "Скачать";
-        btn.onclick = () => {
-          tg.sendData(JSON.stringify({action: "download", file: file.name}));
-          alert("Команда на скачивание отправлена боту: " + file.name);
-        };
-        li.appendChild(btn);
-        list.appendChild(li);
-      });
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const base64 = e.target.result.split(",")[1];
+        tg.sendData(JSON.stringify({file_name:file.name, data: base64}));
+    };
+    reader.readAsDataURL(file);
+    alert("Данные отправлены боту, он сохранит файл в канале!");
+});
+</script>
 
-      // Кнопка загрузки файла
-      document.getElementById("upload-btn").onclick = () => {
-        tg.sendData(JSON.stringify({action: "upload"}));
-        alert("Бот откроет диалог для загрузки файла.");
-      };
-    }
-
-    // Ждём загрузки Telegram WebApp API
-    const checkTg = setInterval(() => {
-      if (window.Telegram && window.Telegram.WebApp) {
-        clearInterval(checkTg);
-        onTelegramReady();
-      }
-    }, 100);
-  </script>
 </body>
 </html>
