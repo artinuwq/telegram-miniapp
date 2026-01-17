@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>MiniApp File Storage</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body {
+  margin: 0;
+  font-family: system-ui;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+button { margin: 5px; padding: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Telegram Cloud Storage</h2>
+
+<input type="file" id="fileInput" />
+<button onclick="uploadFile()">Загрузить</button>
+<h3>Список файлов</h3>
+<ul id="fileList"></ul>
+
+<script>
+const tg = window.Telegram.WebApp;
+
+async function uploadFile() {
+    const input = document.getElementById("fileInput");
+    if (!input.files.length) return alert("Выберите файл");
+    
+    const file = input.files[0];
+
+    // MiniApp не может напрямую отправлять файлы в Telegram API
+    // Решение: отправка файла через бота в чат
+    tg.sendData(JSON.stringify({command: "upload_file", name: file.name}));
+    alert("Команда на загрузку отправлена боту!");
+}
+
+function getFiles() {
+    tg.sendData(JSON.stringify({command: "get_files"}));
+}
+
+// Сюда можно добавить обработку сообщений от бота и обновление списка
+getFiles();
+</script>
+
+</body>
+</html>
